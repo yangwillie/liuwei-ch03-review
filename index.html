@@ -1,0 +1,2976 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第三章校对批注版</title>
+<style>
+:root {
+  --bg: #f6f3ec;
+  --paper: #fffdf8;
+  --ink: #151515;
+  --muted: #696864;
+  --line: #ddd6c8;
+  --accent: #1f6feb;
+  --accent-soft: #e9f1ff;
+  --warn: #b45309;
+  --warn-soft: #fff4df;
+  --danger: #b42318;
+  --danger-soft: #fff0ee;
+  --shadow: 0 18px 60px rgba(40, 34, 24, .08);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  line-height: 1.78;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 253, 248, .92);
+  backdrop-filter: blur(14px);
+}
+.brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.brand strong { font-size: 16px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand span { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn:hover { border-color: #b9b09f; background: #faf8f1; }
+.btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+.layout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 900px) 280px;
+  gap: 24px;
+  max-width: 1540px;
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+}
+.sidebar, .inspector { position: sticky; top: 72px; height: calc(100vh - 96px); overflow: auto; align-self: start; }
+.panel {
+  background: rgba(255,253,248,.72);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.panel h2 { font-size: 14px; margin: 0 0 10px; }
+.toc { display: flex; flex-direction: column; gap: 4px; }
+.toc a { color: #383733; padding: 5px 7px; border-radius: 7px; font-size: 13px; line-height: 1.45; }
+.toc a:hover { background: #eee8dc; text-decoration: none; }
+.toc .toc-l1 { font-weight: 700; }
+.toc .toc-l2 { padding-left: 12px; }
+.toc .toc-l3 { padding-left: 24px; color: var(--muted); }
+.article {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 36px 44px 60px;
+  box-shadow: var(--shadow);
+}
+.review-block {
+  position: relative;
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  column-gap: 18px;
+  padding: 10px 0;
+  border-top: 1px solid transparent;
+}
+.review-block:hover { border-top-color: #eee6d7; }
+.review-block.has-note { background: linear-gradient(90deg, rgba(31,111,235,.07), transparent 38%); }
+.review-block.important { background: linear-gradient(90deg, rgba(180,83,9,.10), transparent 38%); }
+.review-block.revise { background: linear-gradient(90deg, rgba(180,35,24,.10), transparent 38%); }
+.block-tools {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: stretch;
+  padding-top: 7px;
+}
+.block-id { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; text-align: center; }
+.tool-btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #56544f;
+  border-radius: 7px;
+  padding: 3px 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.tool-btn:hover { border-color: #b9b09f; }
+.flag-btn.active[data-flag="important"] { background: var(--warn-soft); border-color: #f0b96d; color: var(--warn); }
+.flag-btn.active[data-flag="revise"] { background: var(--danger-soft); border-color: #f1a39c; color: var(--danger); }
+.note-toggle.active { background: var(--accent-soft); border-color: #93b7ff; color: var(--accent); }
+.block-body { grid-column: 2; min-width: 0; }
+.note-drawer { grid-column: 2; margin: 8px 0 2px; }
+.note-input {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #c8d7f5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  line-height: 1.55;
+  background: #fbfdff;
+  color: var(--ink);
+}
+h1, h2, h3, h4 { line-height: 1.25; letter-spacing: 0; }
+h1 { font-size: 34px; margin: 8px 0 18px; }
+h2 { font-size: 24px; margin: 34px 0 16px; }
+h3 { font-size: 18px; margin: 24px 0 10px; }
+p { margin: 0 0 14px; font-size: 17px; }
+blockquote {
+  margin: 8px 0 18px;
+  padding: 14px 18px;
+  border-left: 4px solid var(--ink);
+  background: #f4efe4;
+  border-radius: 8px;
+}
+blockquote p { margin: 0; font-weight: 600; }
+ul, ol { margin: 0 0 16px 22px; padding: 0; font-size: 16px; }
+li { margin: 5px 0; }
+.table-wrap { overflow-x: auto; margin: 10px 0 18px; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 680px; background: #fff; font-size: 14px; line-height: 1.55; }
+th, td { border-bottom: 1px solid #ece5d7; border-right: 1px solid #ece5d7; padding: 10px 12px; vertical-align: top; }
+th:last-child, td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+th { background: #f3eadb; font-weight: 700; text-align: left; }
+code { background: #f0eee8; border-radius: 4px; padding: 1px 4px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.footnotes { font-size: 13px; color: #4e4b45; }
+.fn-label { font-weight: 700; color: var(--ink); }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 14px; }
+.stat { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 9px; }
+.stat strong { display: block; font-size: 20px; line-height: 1.2; }
+.stat span { color: var(--muted); font-size: 12px; }
+.help { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+.filter-on .review-block:not(.has-note):not(.important):not(.revise) { display: none; }
+@media (max-width: 1180px) {
+  .layout { grid-template-columns: 240px minmax(0, 1fr); }
+  .inspector { grid-column: 1 / -1; position: static; height: auto; }
+}
+@media (max-width: 840px) {
+  .topbar { position: static; align-items: flex-start; flex-direction: column; }
+  .layout { grid-template-columns: 1fr; padding: 16px; }
+  .sidebar { position: static; height: auto; }
+  .article { padding: 22px 16px 44px; }
+  .review-block { grid-template-columns: 1fr; }
+  .block-tools { grid-column: 1; flex-direction: row; padding: 0 0 6px; }
+  .block-body, .note-drawer { grid-column: 1; }
+  h1 { font-size: 28px; }
+}
+@media print {
+  body { background: #fff; }
+  .topbar, .sidebar, .inspector, .block-tools, .note-drawer { display: none !important; }
+  .layout { display: block; max-width: none; padding: 0; }
+  .article { border: 0; box-shadow: none; padding: 0; }
+  .review-block { display: block; page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <strong>第三章校对批注版</strong>
+    <span>来源：03_六维协同盘_从六个动作到一个增长系统_v2.11_校对版.md · 批注保存在本机浏览器</span>
+  </div>
+  <div class="actions">
+    <button class="btn" id="toggle-filter">只看有批注/标记</button>
+    <button class="btn" id="expand-notes">展开批注</button>
+    <button class="btn" id="collapse-notes">收起批注</button>
+    <button class="btn primary" id="export-notes">导出批注 MD</button>
+    <button class="btn" id="print-page">打印/PDF</button>
+  </div>
+</header>
+<div class="layout" id="page">
+  <aside class="sidebar panel">
+    <h2>目录</h2>
+    <nav class="toc"><a class="toc-l1" href="#h001">第 3 章：六维协同盘：从六个动作到一张增长地图</a><a class="toc-l2" href="#h002">开场：看起来每个团队都对，但用户没有走完那条路</a><a class="toc-l2" href="#h003">一、六维不是六个渠道，而是六个用户问题</a><a class="toc-l2" href="#h004">二、品效销达搜直：六个维度，各自解决一个断点</a><a class="toc-l3" href="#h005">品：解决被记住</a><a class="toc-l3" href="#h006">效：解决跑得动</a><a class="toc-l3" href="#h007">销：解决接得住</a><a class="toc-l3" href="#h008">达：解决被相信</a><a class="toc-l3" href="#h009">搜：解决找得到</a><a class="toc-l3" href="#h010">直：解决买得下</a><a class="toc-l2" href="#h011">三、六维协同盘不是平均用力，而是找到断点</a><a class="toc-l2" href="#h012">四、目标层给方向，手段层进场景</a><a class="toc-l2" href="#h013">五、飞轮和引擎：本章只讲入口，不抢后文</a><a class="toc-l2" href="#h014">六、普通品牌的第一场六维诊断会</a><a class="toc-l3" href="#h015">第一场诊断会 SOP</a><a class="toc-l2" href="#h016">七、AI 可以帮忙，但不能替品牌下判断</a><a class="toc-l2" href="#h017">本章结语：先把路接起来</a><a class="toc-l2" href="#h018">章末工具包</a><a class="toc-l3" href="#h019">1. 第一次六维诊断的 10 个问题</a><a class="toc-l3" href="#h020">2. 普通品牌 30 天小闭环</a><a class="toc-l3" href="#h021">3. 本章资产沉淀表</a><a class="toc-l3" href="#h022">4. 常见失败清单</a><a class="toc-l3" href="#h023">5. 证据边界</a><a class="toc-l2" href="#h024">本章脚注</a></nav>
+  </aside>
+  <main class="article" id="article">
+    <section class="review-block heading h1 " id="b001" data-block-id="b001" data-kind="heading h1">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B001</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h1 id="h001">第 3 章：六维协同盘：从六个动作到一张增长地图</h1></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b002" data-block-id="b002" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B002</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>章前校对卡</p><p>- 本章角色：模型章。只负责让读者看懂六维协同盘，并学会做第一场诊断。</p><p>- 本轮评分：91/100。</p><p>- 本章最强判断：用户不是按部门买东西的，品牌必须把分散动作放回同一条用户旅程。</p><p>- 本轮优化方向：压缩飞轮、引擎和 AI 的提前展开；增加六维诊断表、断点判断表、第一场诊断会 SOP 和资产沉淀表。</p><p>- 待后续增强：出版前可再补 1 个中国公开案例作为“六维接力”样板，但不能把第三章写成案例章。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b003" data-block-id="b003" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B003</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>如果把一次品牌增长摊在桌面上看，它很少只坏在一个地方。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b004" data-block-id="b004" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B004</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>内容热了，用户去搜却找不到清楚答案。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b005" data-block-id="b005" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B005</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>达人种草做了，商品页没有接住关键疑虑。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b006" data-block-id="b006" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B006</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>直播成交冲上去了，复盘里却发现用户只记住了折扣，没有记住品牌。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b007" data-block-id="b007" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B007</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>团队各自都能解释自己那一段。品牌说声量有了，投放说成本还行，电商说页面转化在涨，达人说评论区反馈不错，搜索说品牌词有波动，直播说单场 GMV 跑出来了。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b008" data-block-id="b008" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B008</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这些话都可能对。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b009" data-block-id="b009" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B009</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>但用户走过的不是六张报表，而是一条连续的路。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b010" data-block-id="b010" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B010</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>六维协同盘要解决的，就是把这条路重新接起来。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b011" data-block-id="b011" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B011</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h002">开场：看起来每个团队都对，但用户没有走完那条路</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b012" data-block-id="b012" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B012</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>想象一场新品复盘会。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b013" data-block-id="b013" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B013</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>会议桌上有六份材料：品牌声量、投放 ROI、商品页转化、达人内容、搜索词、直播成交。每份材料都有漂亮的指标，也都有说得过去的理由。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b014" data-block-id="b014" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B014</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>真正麻烦的是，老板问的不是“哪张表更好看”，而是一个更简单的问题：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b015" data-block-id="b015" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B015</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>这次新品之后，品牌到底变强了吗？</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b016" data-block-id="b016" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B016</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这时，会议很容易散开。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b017" data-block-id="b017" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B017</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品牌团队会说，曝光和讨论都上来了。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b018" data-block-id="b018" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B018</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>投放团队会说，点击成本已经压下去了。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b019" data-block-id="b019" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B019</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>电商团队会说，承接页还要继续改。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b020" data-block-id="b020" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B020</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>达人团队会说，内容互动不错，但预算不够。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b021" data-block-id="b021" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B021</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>搜索团队会说，品牌词还没起来。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b022" data-block-id="b022" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B022</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>直播团队会说，成交需要更强机制。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b023" data-block-id="b023" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B023</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>每个人都在讲事实，但没有人讲完整路径。用户从第一次看见，到开始相信，到主动搜索，到比较商品，到临门下单，中间到底在哪里断了，会议上反而没人能说清。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b024" data-block-id="b024" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B024</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这就是很多品牌增长的真实困境。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b025" data-block-id="b025" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B025</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>问题不是动作少，而是动作没有合成一张图。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b026" data-block-id="b026" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B026</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>六维协同盘不是让品牌再多做六件事。它先帮团队把问题叫准：这件事到底是在解决被记住、跑得动、接得住、被相信、找得到，还是买得下。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b027" data-block-id="b027" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B027</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>只有问题被叫准，动作才有方向。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b028" data-block-id="b028" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B028</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h003">一、六维不是六个渠道，而是六个用户问题</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b029" data-block-id="b029" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B029</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>很多品牌一遇到增长不稳，就会把它统称为“流量问题”。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b030" data-block-id="b030" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B030</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>卖不动，是不是流量不够？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b031" data-block-id="b031" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B031</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>转化差，是不是投放不够？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b032" data-block-id="b032" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B032</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>声量弱，是不是内容不够？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b033" data-block-id="b033" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B033</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>大促没爆，是不是直播不够？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b034" data-block-id="b034" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B034</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>新品起不来，是不是达人没找对？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b035" data-block-id="b035" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B035</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这些判断都可能成立，但也都可能只是表面。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b036" data-block-id="b036" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B036</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>一个品牌卖不动，有时候不是没人看见，而是用户根本记不住；不是没有点击，而是点击之后没有稳定转化；不是没有种草，而是用户被种草之后找不到可信答案；不是直播间不努力，而是用户临门一脚时仍然缺少购买理由。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b037" data-block-id="b037" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B037</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>六维协同盘把这些混在一起的问题拆成六个用户问题。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block table-block " id="b038" data-block-id="b038" data-kind="table-block">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B038</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><div class="table-wrap"><table><thead><tr><th>维度</th><th>核心问题</th><th>不是简单看</th><th>应该追问</th><th>要留下的资产</th></tr></thead><tbody><tr><td>品</td><td>被记住</td><td>曝光、声量、口号</td><td>用户在需求出现时能想起谁？想起后知道你代表什么吗？</td><td>品牌记忆点、核心表达、禁用表达</td></tr><tr><td>效</td><td>跑得动</td><td>ROI、点击率、消耗</td><td>哪类人群、哪种卖点、哪条路径真的有效？</td><td>有效人群、有效素材、无效样本</td></tr><tr><td>销</td><td>接得住</td><td>页面转化、成交额</td><td>用户有兴趣之后，商品、价格、权益、服务有没有接住？</td><td>商品页修改项、客服问题、承接断点</td></tr><tr><td>达</td><td>被相信</td><td>达人数、互动量</td><td>用户为什么相信这件事是真的、适合自己？</td><td>达人话术、评论反馈、信任样本</td></tr><tr><td>搜</td><td>找得到</td><td>搜索量、排名</td><td>用户主动验证时，看到的是清楚答案还是更多犹豫？</td><td>用户问题库、搜索答案、AI 可读内容</td></tr><tr><td>直</td><td>买得下</td><td>单场 GMV、成交转化</td><td>直播现场有没有解释清楚、处理犹豫、推动成交？</td><td>直播问答、成交话术、阻碍清单</td></tr></tbody></table></div></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b039" data-block-id="b039" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B039</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这张表的意义，不是把六维变成六个部门。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b040" data-block-id="b040" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B040</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>恰恰相反，它是为了防止品牌被部门视角困住。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b041" data-block-id="b041" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B041</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>用户不会说“我现在进入品维度”，也不会说“我马上切换到销维度”。他只是刷到一个内容，心里有点兴趣；看到一个达人，开始多信一点；去搜索评价，想确认是不是智商税；点进商品页，比较型号和价格；进直播间问一句“现在买到底值不值”；最后才决定买不买。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b042" data-block-id="b042" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B042</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>用户走的是一条路。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b043" data-block-id="b043" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B043</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>团队常常拆成六段路。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b044" data-block-id="b044" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B044</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>六维协同盘要做的第一件事，就是把团队重新拉回用户那条路。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b045" data-block-id="b045" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B045</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h004">二、品效销达搜直：六个维度，各自解决一个断点</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b046" data-block-id="b046" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B046</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h005">品：解决被记住</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b047" data-block-id="b047" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B047</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品解决的是品牌能不能被记住。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b048" data-block-id="b048" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B048</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这里的“记住”，不是用户看过一支广告，也不是用户听过一句口号，而是当某类需求出现时，用户能不能想起你；想起你时，能不能说清你大概代表什么；面对相似选择时，能不能知道为什么你值得被优先考虑。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b049" data-block-id="b049" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B049</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>一个品牌如果不能被记住，后面的增长都会变贵。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b050" data-block-id="b050" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B050</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>每一次投放都要重新解释。每一次达人合作都要重新说服。每一次直播都更依赖价格刺激。每一次转化都更容易被竞品和促销截走。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b051" data-block-id="b051" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B051</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>所以，品不是最虚的一维。它是降低未来增长成本的一维。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b052" data-block-id="b052" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B052</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这一维要回答的是：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b053" data-block-id="b053" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B053</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>用户离开这次触达之后，还能不能带走一个关于品牌的清楚记忆。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b054" data-block-id="b054" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B054</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h006">效：解决跑得动</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b055" data-block-id="b055" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B055</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>效解决的是增长能不能跑得动。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b056" data-block-id="b056" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B056</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>很多人一提到效，就想到 ROI、转化成本、点击率、投放模型。这些当然重要，但效不只是买量能力。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b057" data-block-id="b057" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B057</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>真正的效果增长能力，是品牌能不能持续找到三件事：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b058" data-block-id="b058" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B058</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>谁更可能买。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b059" data-block-id="b059" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B059</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>为什么他会买。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b060" data-block-id="b060" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B060</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>什么表达能推动他买。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b061" data-block-id="b061" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B061</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>一个品牌偶然跑出一个爆款素材，不等于有了效果能力。一次活动 ROI 不错，也不等于增长系统已经稳定。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b062" data-block-id="b062" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B062</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>好的效，应该让品牌不断从市场反馈里学习：哪些人群更敏感，哪些卖点更有效，哪些素材虽然点击高但后端转化差，哪些表达看起来热闹却没有带来真实需求。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b063" data-block-id="b063" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B063</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这一维要回答的是：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b064" data-block-id="b064" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B064</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>品牌能不能不断找到有效人群、有效表达和有效路径。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b065" data-block-id="b065" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B065</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h007">销：解决接得住</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b066" data-block-id="b066" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B066</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>销解决的是需求能不能被接住。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b067" data-block-id="b067" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B067</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>很多品牌不是前端没有兴趣，而是后端没有承接。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b068" data-block-id="b068" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B068</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>用户看完内容觉得不错，点进商品页，却找不到刚才被打动的理由。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b069" data-block-id="b069" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B069</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>用户被达人种草了，准备下单，却被复杂规格、混乱价格和不清楚的权益劝退。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b070" data-block-id="b070" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B070</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>用户进入直播间，听完讲解觉得有道理，但库存、售后、服务承诺没有让他放心。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b071" data-block-id="b071" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B071</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这就是销的问题。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b072" data-block-id="b072" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B072</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>销不是简单的电商运营，也不是只看成交页转化率。它包括商品结构、价格体系、页面表达、购买路径、库存供给、客服响应、服务体验和复购机制。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b073" data-block-id="b073" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B073</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>前端越能种草，后端越不能漏。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b074" data-block-id="b074" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B074</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>因为兴趣越强，漏损越可惜；流量越贵，承接越重要；用户越接近购买，任何一个不清楚、不放心、不顺畅，都会造成流失。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b075" data-block-id="b075" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B075</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这一维要回答的是：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b076" data-block-id="b076" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B076</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>品牌有没有能力把被激发出来的需求接住，并尽可能沉淀为长期关系。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b077" data-block-id="b077" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B077</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h008">达：解决被相信</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b078" data-block-id="b078" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B078</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>达解决的是用户为什么相信。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b079" data-block-id="b079" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B079</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>今天，用户越来越不会只听品牌自己怎么说。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b080" data-block-id="b080" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B080</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品牌说自己专业，用户会问：谁也这么认为？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b081" data-block-id="b081" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B081</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品牌说自己高端，用户会问：真实使用的人怎么说？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b082" data-block-id="b082" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B082</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品牌说自己适合某类人群，用户会问：有没有我相信的人也这么用？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b083" data-block-id="b083" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B083</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>达人只是表层形式，背后真正重要的是信任传递。可信的人、可信的场景、可信的表达，能帮助品牌进入用户的判断系统。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b084" data-block-id="b084" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B084</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>所以，达不是“找人发声”这么简单。它可以是专业测评，可以是 KOC 真实体验，可以是店员和导购的解释，也可以是评论区里真实用户的二次确认。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b085" data-block-id="b085" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B085</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这一维要回答的是：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b086" data-block-id="b086" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B086</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>用户为什么愿意相信这件事是真的，愿意相信这个品牌适合自己。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b087" data-block-id="b087" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B087</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h009">搜：解决找得到</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b088" data-block-id="b088" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B088</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>搜解决的是用户主动寻找时，品牌能不能被找到，并且被正确理解。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b089" data-block-id="b089" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B089</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>搜索不是关键词投放的代名词。它代表的是用户意图变得清晰的时刻。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b090" data-block-id="b090" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B090</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>用户看完内容之后会搜。听完达人推荐之后会搜。进直播间之前会搜。下单之前会搜。买完之后遇到问题也会搜。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b091" data-block-id="b091" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B091</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>当用户开始主动搜索时，他已经不只是被动看见，而是在主动验证。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b092" data-block-id="b092" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B092</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这时候，品牌面对的是一个关键窗口：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b093" data-block-id="b093" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B093</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>他搜得到你吗？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b094" data-block-id="b094" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B094</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>搜到的信息是否清楚？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b095" data-block-id="b095" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B095</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>不同内容之间是否一致？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b096" data-block-id="b096" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B096</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>有没有可信测评、官方解释、用户评价和购买理由？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b097" data-block-id="b097" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B097</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>搜完之后，用户是更确定，还是更犹豫？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b098" data-block-id="b098" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B098</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>近两年，AI 搜索和零点击结果正在让这个问题更重要。McKinsey 在 2025 年的 AI 搜索研究中提出，AI-powered search 已经成为消费者研究、比较和发现品牌的重要入口，并预测到 2028 年会影响相当规模的美国消费支出。Bain 在 2025 年关于零点击搜索的文章中也指出，许多用户已经习惯直接依赖搜索页或 AI 摘要获得答案，而不再继续点击外部网站。<sup><a href="#fn-1">[1]</a></sup><sup><a href="#fn-2">[2]</a></sup></p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b099" data-block-id="b099" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B099</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这些海外数据不能直接等同中国平台环境，但它们提醒品牌一件事：搜索正在从“流量入口”变成“答案入口”。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b100" data-block-id="b100" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B100</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品牌不只要被搜到，还要被正确回答。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b101" data-block-id="b101" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B101</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这一维要回答的是：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b102" data-block-id="b102" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B102</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>品牌能不能承接用户已经显性化的意图，并在 AI 时代获得稳定的答案权。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b103" data-block-id="b103" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B103</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h010">直：解决买得下</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b104" data-block-id="b104" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B104</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>直在本章只做总览，完整展开放到第 9 章。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b105" data-block-id="b105" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B105</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>直解决的是用户临门一脚能不能买下。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b106" data-block-id="b106" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B106</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>直播不是简单开一个直播间卖货，也不是把低价、赠品、库存、限时机制讲透，就等于做好了直播。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b107" data-block-id="b107" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B107</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>直播的本质，是一个高密度的实时销售现场。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b108" data-block-id="b108" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B108</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>在这个现场里，品牌可以同时解释产品、展示场景、回答问题、建立信任、处理犹豫、强化利益点、推动成交。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b109" data-block-id="b109" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B109</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这也是直播和静态货架最大的不同。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b110" data-block-id="b110" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B110</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>静态页面只能等待用户阅读。直播间可以根据用户问题实时调整讲解。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b111" data-block-id="b111" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B111</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>静态页面很难感知用户犹豫。直播间可以通过弹幕、评论、停留和互动看到用户卡在哪里。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b112" data-block-id="b112" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B112</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>所以，直解决的不是单纯 GMV，而是：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b113" data-block-id="b113" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B113</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>品牌有没有能力在关键成交现场完成解释、信任和推动。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b114" data-block-id="b114" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B114</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>但直也最容易被误用。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b115" data-block-id="b115" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B115</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>如果直播只剩下低价、赠品、库存和限时，用户可能会买，但买完之后只记住便宜，不记住品牌。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b116" data-block-id="b116" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B116</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>真正好的直，不只是把货卖出去，也要把用户的高频问题、购买顾虑和成交理由带回到品牌、投放、商品页和客服系统里。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b117" data-block-id="b117" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B117</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h011">三、六维协同盘不是平均用力，而是找到断点</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b118" data-block-id="b118" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B118</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>六维放在一起，最容易被误读成一张“全都要做”的清单。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b119" data-block-id="b119" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B119</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这会把方法用反。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b120" data-block-id="b120" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B120</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>六维协同盘不是让品牌每次把六件事平均做一遍，而是帮助团队判断：这一轮最关键的断点在哪里，哪两个或三个维度必须先接起来。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b121" data-block-id="b121" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B121</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>很多增长问题，看起来像一个维度的问题，实际上是两个维度之间断了。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block table-block " id="b122" data-block-id="b122" data-kind="table-block">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B122</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><div class="table-wrap"><table><thead><tr><th>看到的现象</th><th>可能不是</th><th>更可能先查</th><th>需要接起来</th></tr></thead><tbody><tr><td>内容有热度但销量没起</td><td>内容不够多</td><td>商品页没有接住兴趣，搜索答案让用户犹豫</td><td>达 + 搜 + 销</td></tr><tr><td>投放点击便宜但转化差</td><td>人群不够准</td><td>品牌记忆点不清，卖点只吸引点击不推动购买</td><td>品 + 效 + 销</td></tr><tr><td>达人数据好但品牌没变强</td><td>达人不够大</td><td>用户相信的是达人本人，不是品牌理由</td><td>达 + 品</td></tr><tr><td>搜索量起来但成交弱</td><td>搜索预算不够</td><td>用户搜到的问题没有被官方答案和商品页接住</td><td>搜 + 销</td></tr><tr><td>直播 GMV 高但复购弱</td><td>直播场次不够</td><td>用户只记住机制，没有带走品牌和产品理由</td><td>直 + 品 + 销</td></tr><tr><td>大促后一切归零</td><td>节奏不够密</td><td>有结果，没有沉淀成下一轮可调用的判断</td><td>六维 + 飞轮</td></tr></tbody></table></div></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b123" data-block-id="b123" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B123</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这张表可以直接放进复盘会。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b124" data-block-id="b124" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B124</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>它会逼团队少争论“谁的问题”，多讨论“用户卡在哪一步”。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b125" data-block-id="b125" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B125</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>比如，一个美妆新品上市三个月，短视频内容不差，达人也发了不少，直播间偶尔能冲出成交，但整体增长不稳。过去的讨论很容易变成：投放说素材还要测，达人说预算太少，货架团队说页面要改，直播团队说机制不够狠。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b126" data-block-id="b126" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B126</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>六维诊断会换一种问法：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b127" data-block-id="b127" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B127</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>用户第一次看见我们时，记住了什么？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b128" data-block-id="b128" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B128</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>他为什么相信这个卖点？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b129" data-block-id="b129" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B129</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>他去搜的时候，看到的答案是否统一？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b130" data-block-id="b130" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B130</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>他进商品页之后，最大疑虑有没有被回答？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b131" data-block-id="b131" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B131</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>他在直播间问的问题，能不能回到商品页和下一轮达人 brief？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b132" data-block-id="b132" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B132</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>问题一旦这样问，责任就从部门回到用户旅程。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b133" data-block-id="b133" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B133</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这也是六维协同盘最重要的变化：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b134" data-block-id="b134" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B134</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>动作层问的是，做了什么。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b135" data-block-id="b135" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B135</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>问题层问的是，解决了什么。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b136" data-block-id="b136" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B136</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>系统层问的是，这次解决之后，下一次会不会更准。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b137" data-block-id="b137" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B137</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h012">四、目标层给方向，手段层进场景</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b138" data-block-id="b138" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B138</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>六维内部还有一层关系要看清。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b139" data-block-id="b139" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B139</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品、效、销，更接近品牌增长的目标层。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b140" data-block-id="b140" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B140</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品牌要被记住。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b141" data-block-id="b141" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B141</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>增长要跑得动。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b142" data-block-id="b142" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B142</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>销售要接得住。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b143" data-block-id="b143" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B143</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>达、搜、直，更接近品牌进入真实用户决策时必须掌握的关键手段。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b144" data-block-id="b144" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B144</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>达人和真实用户帮助品牌被相信。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b145" data-block-id="b145" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B145</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>搜索和 AI 答案帮助品牌被找到。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b146" data-block-id="b146" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B146</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>直播和实时销售现场帮助品牌买得下。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b147" data-block-id="b147" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B147</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>如果只有品、效、销，没有达、搜、直，品牌容易停留在企业内部语言里。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b148" data-block-id="b148" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B148</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品牌想被记住，但用户不相信。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b149" data-block-id="b149" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B149</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>增长想跑起来，但缺少高质量意图和真实反馈。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b150" data-block-id="b150" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B150</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>销售想接得住，但用户临门一脚的犹豫没有被处理。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b151" data-block-id="b151" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B151</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>如果只有达、搜、直，没有品、效、销，品牌又会陷入动作堆叠。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b152" data-block-id="b152" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B152</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>达人很多，但不知道要建立什么心智。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b153" data-block-id="b153" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B153</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>搜索很多，但答案不统一，不知道要把用户引向哪里。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b154" data-block-id="b154" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B154</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>直播很多，但用户只记住折扣，没有记住品牌。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b155" data-block-id="b155" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B155</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>所以，六维协同盘真正要建立的是一条回路：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b156" data-block-id="b156" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B156</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>目标层给方向，手段层进场景，用户反馈再回到目标层。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b157" data-block-id="b157" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B157</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品给达、搜、直方向：品牌到底希望用户记住什么。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b158" data-block-id="b158" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B158</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>效用达、搜、直验证：哪些人群、卖点、内容和场景真的跑得动。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b159" data-block-id="b159" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B159</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>销把达、搜、直带来的需求接住：信任、意图和购买冲动，最后都要落到商品、页面、价格、服务和体验里。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b160" data-block-id="b160" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B160</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>反过来，达、搜、直也要把用户的真实反馈带回品、效、销。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b161" data-block-id="b161" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B161</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>达人评论区里，用户真正相信和质疑的东西，要回到品牌表达里。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b162" data-block-id="b162" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B162</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>搜索词里，用户主动提出的问题，要回到增长判断和销售承接里。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b163" data-block-id="b163" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B163</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>直播间里，用户临门一脚的犹豫，要回到商品页、客服、投放素材和品牌话术里。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b164" data-block-id="b164" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B164</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>如果反馈不能回流，手段就只是一次性动作。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b165" data-block-id="b165" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B165</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>如果反馈能够回流，手段就会变成系统学习。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b166" data-block-id="b166" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B166</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h013">五、飞轮和引擎：本章只讲入口，不抢后文</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b167" data-block-id="b167" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B167</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>到这里，六维协同盘已经把分散动作放回同一张图里。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b168" data-block-id="b168" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B168</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>但一张图只能帮助品牌看清问题。它不能保证品牌下一次就一定更准。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b169" data-block-id="b169" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B169</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>所以，六维后面必须接一个飞轮。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b170" data-block-id="b170" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B170</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>在第三章里，飞轮只需要先记住三句话：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b171" data-block-id="b171" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B171</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>诊断：先找到真正的增长断点。</p><p>校准：让关键动作重新连接。</p><p>复盘：把一次营销变成下一次增长的资产。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b172" data-block-id="b172" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B172</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这三句话足够解释为什么六维不是一张静态图。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b173" data-block-id="b173" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B173</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>它不是让品牌把品、效、销、达、搜、直六件事全部做满，而是让团队知道：这一轮到底卡在哪里，应该先修哪一个连接，做完以后要留下什么判断。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b174" data-block-id="b174" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B174</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>完整的飞轮方法，放到第 10 章展开。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b175" data-block-id="b175" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B175</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>支撑能力引擎也是同样的关系。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b176" data-block-id="b176" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B176</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>飞轮不会自己转起来。它需要共同语言、案例证据、数据资产、AI 工作流和组织机制。否则，每一次项目都像临时起火，团队看起来很忙，组织却没有留下什么。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b177" data-block-id="b177" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B177</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>但第三章不展开这些细节。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b178" data-block-id="b178" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B178</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这里读者只需要记住一句话：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b179" data-block-id="b179" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B179</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>六维负责把问题看清，飞轮负责让下一次不从零开始，引擎负责让这套方法在日常工作里跑起来。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b180" data-block-id="b180" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B180</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这就是整本书的核心题眼：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b181" data-block-id="b181" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B181</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>六维负责协同，飞轮负责变准，引擎负责供能。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b182" data-block-id="b182" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B182</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h014">六、普通品牌的第一场六维诊断会</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b183" data-block-id="b183" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B183</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>普通品牌第一次用这套框架，不要把它做成一场大型战略咨询。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b184" data-block-id="b184" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B184</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>更好的开始，是找一个真实问题，开一场小诊断会。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b185" data-block-id="b185" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B185</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>比如：一个新品上了三个月，投放有点击，达人有内容，直播也卖过几场，但整体增长就是不稳。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b186" data-block-id="b186" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B186</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>这场会不需要先讨论组织架构，也不需要先买新系统。只要把用户旅程画出来：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b187" data-block-id="b187" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B187</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>用户在哪里第一次看见我们？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b188" data-block-id="b188" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B188</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>在哪里产生兴趣？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b189" data-block-id="b189" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B189</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>在哪里开始相信？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b190" data-block-id="b190" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B190</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>在哪里搜索确认？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b191" data-block-id="b191" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B191</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>在哪里决定购买？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b192" data-block-id="b192" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B192</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>又在哪里失望、沉默或复购？</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b193" data-block-id="b193" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B193</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h015">第一场诊断会 SOP</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block table-block " id="b194" data-block-id="b194" data-kind="table-block">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B194</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><div class="table-wrap"><table><thead><tr><th>阶段</th><th>做什么</th><th>产出</th></tr></thead><tbody><tr><td>会前 2 天</td><td>收集六类材料：内容样本、投放素材、商品页、达人评论、搜索词、直播问答</td><td>一份用户触点包</td></tr><tr><td>开场 15 分钟</td><td>不看部门成绩，先画用户从看见到下单的路径</td><td>用户旅程草图</td></tr><tr><td>诊断 45 分钟</td><td>用六维逐一判断：被记住、跑得动、接得住、被相信、找得到、买得下</td><td>1 到 3 个核心断点</td></tr><tr><td>校准 30 分钟</td><td>只选本轮最该接起来的两个或三个维度</td><td>本轮协同动作</td></tr><tr><td>收口 15 分钟</td><td>明确这次要留下什么资产，谁负责更新</td><td>资产清单和负责人</td></tr><tr><td>会后 7 天</td><td>把修改项落到 brief、页面、话术、搜索答案或直播脚本</td><td>第一版小闭环</td></tr></tbody></table></div></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b195" data-block-id="b195" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B195</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>第一次诊断不用追求完美。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b196" data-block-id="b196" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B196</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>只要回答三个问题就够了：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block list " id="b197" data-block-id="b197" data-kind="list">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B197</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><ol><li>用户现在卡在哪一步？</li><li>哪几个维度必须一起补？</li><li>这次做完，要留下什么资产给下一次用？</li></ol></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b198" data-block-id="b198" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B198</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>如果这三个问题能被团队共同回答，六维就不再是一个概念，而开始变成一种工作方式。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b199" data-block-id="b199" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B199</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h016">七、AI 可以帮忙，但不能替品牌下判断</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b200" data-block-id="b200" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B200</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>AI 在第三章不需要被写成工具清单。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b201" data-block-id="b201" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B201</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>它在六维协同盘里的价值，是帮助团队更快看见断点、整理证据、生成备选动作、沉淀复盘资产。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b202" data-block-id="b202" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B202</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>但它不能替品牌决定，什么值得被用户记住，什么是真正的增长断点，什么风险不能碰。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b203" data-block-id="b203" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B203</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>一个简单工作流可以这样开始：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block table-block " id="b204" data-block-id="b204" data-kind="table-block">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B204</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><div class="table-wrap"><table><thead><tr><th>环节</th><th>输入</th><th>AI 可以做</th><th>人必须判断</th><th>输出资产</th></tr></thead><tbody><tr><td>诊断</td><td>评论、搜索词、客服问答、直播弹幕</td><td>聚类高频问题，找重复疑虑</td><td>哪些问题真正影响购买</td><td>用户问题库</td></tr><tr><td>校准</td><td>素材、商品页、达人 brief</td><td>对照六维找断点，生成修改建议</td><td>先改哪两个连接</td><td>本轮协同清单</td></tr><tr><td>创作</td><td>品牌表达、有效样本、禁区</td><td>生成多版文案、话术、页面模块</td><td>哪一句符合品牌判断</td><td>有效表达库</td></tr><tr><td>复盘</td><td>投放、成交、搜索、直播反馈</td><td>汇总结果，整理成功和失败样本</td><td>哪些结论可以迁移</td><td>复盘样本库</td></tr></tbody></table></div></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b205" data-block-id="b205" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B205</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>AI 能让团队十分钟写出二十个标题。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b206" data-block-id="b206" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B206</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>但它不会替品牌决定，哪一句值得被用户记住。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b207" data-block-id="b207" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B207</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>真正稀缺的不是生成，而是删掉那十九句的判断。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b208" data-block-id="b208" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B208</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>所以，《六维营销》不是把 AI 放在最前面。它先把品牌增长问题放回系统里，再让 AI 进入系统，帮助系统变快、变准、变强。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b209" data-block-id="b209" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B209</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h017">本章结语：先把路接起来</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b210" data-block-id="b210" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B210</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>第三章到这里，真正完成了整本书方法论的第一次亮相。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b211" data-block-id="b211" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B211</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>前两章讲的是为什么。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b212" data-block-id="b212" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B212</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>为什么营销动作越来越多，品牌反而可能越来越弱。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b213" data-block-id="b213" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B213</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>为什么 AI 让营销效率提高的同时，也会放大判断混乱和组织割裂。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b214" data-block-id="b214" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B214</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>第三章讲的是怎么看。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b215" data-block-id="b215" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B215</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>看品牌增长，不要先看部门汇报。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b216" data-block-id="b216" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B216</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>先看用户有没有走完那条路。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b217" data-block-id="b217" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B217</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>品解决被记住。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b218" data-block-id="b218" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B218</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>效解决跑得动。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b219" data-block-id="b219" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B219</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>销解决接得住。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b220" data-block-id="b220" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B220</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>达解决被相信。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b221" data-block-id="b221" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B221</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>搜解决找得到。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b222" data-block-id="b222" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B222</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>直解决买得下。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b223" data-block-id="b223" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B223</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>六维协同盘让品牌不再只问“做了什么”，而是问“解决了什么问题”。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b224" data-block-id="b224" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B224</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>飞轮让品牌不再只问“这次效果怎么样”，而是问“这次之后，我们有没有更准”。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b225" data-block-id="b225" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B225</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>引擎让品牌不再只靠少数人的经验，而是让经验进入系统，被记录、被比较、被调用、被校准。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b226" data-block-id="b226" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B226</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>从下一章开始，我们将进入六维的第一维：</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block quote " id="b227" data-block-id="b227" data-kind="quote">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B227</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><blockquote><p>品：品牌心智，解决被记住。</p></blockquote></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block paragraph " id="b228" data-block-id="b228" data-kind="paragraph">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B228</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><p>因为一个品牌如果不能被记住，后面的所有动作都会变贵。</p></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b229" data-block-id="b229" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B229</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h018">章末工具包</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b230" data-block-id="b230" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B230</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h019">1. 第一次六维诊断的 10 个问题</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block list " id="b231" data-block-id="b231" data-kind="list">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B231</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><ol><li>用户第一次看到我们时，能不能说出一个清楚记忆点？</li><li>这轮增长真正跑动的是哪类人群、哪种卖点、哪条路径？</li><li>用户产生兴趣之后，商品页、价格、权益、服务有没有接住？</li><li>用户为什么相信我们，而不是只相信达人、促销或平台机制？</li><li>用户主动搜索时，看到的答案是否统一、可信、清楚？</li><li>直播间里用户反复问的三个问题是什么？</li><li>这轮动作里，哪两个维度之间断得最明显？</li><li>哪些指标看起来好，但没有推动用户继续往下走？</li><li>这次做完，哪些用户语言、素材、话术、问题必须留下来？</li><li>下一轮 brief 能不能直接调用这次的判断？</li></ol></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b232" data-block-id="b232" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B232</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h020">2. 普通品牌 30 天小闭环</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block table-block " id="b233" data-block-id="b233" data-kind="table-block">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B233</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><div class="table-wrap"><table><thead><tr><th>时间</th><th>重点</th><th>动作</th><th>交付物</th></tr></thead><tbody><tr><td>第 1 周</td><td>找断点</td><td>收集评论、搜索词、商品页问题、直播问答，开一次六维诊断会</td><td>断点清单</td></tr><tr><td>第 2 周</td><td>接两维</td><td>选择最关键的两个维度优先校准，例如达 + 搜、搜 + 销、直 + 品</td><td>协同动作清单</td></tr><tr><td>第 3 周</td><td>小范围执行</td><td>修改达人 brief、商品页模块、搜索答案、直播脚本或投放素材</td><td>第一版执行样本</td></tr><tr><td>第 4 周</td><td>复盘沉淀</td><td>对照用户反馈和业务结果，判断哪些有效、哪些无效</td><td>用户问题库、有效表达库、失败样本</td></tr></tbody></table></div></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b234" data-block-id="b234" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B234</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h021">3. 本章资产沉淀表</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block table-block " id="b235" data-block-id="b235" data-kind="table-block">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B235</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><div class="table-wrap"><table><thead><tr><th>资产</th><th>来源</th><th>用途</th></tr></thead><tbody><tr><td>用户问题库</td><td>搜索词、评论、客服、直播弹幕</td><td>判断用户真正卡在哪里</td></tr><tr><td>品牌记忆点</td><td>内容反馈、调研、达人评论</td><td>统一品牌希望被记住的理由</td></tr><tr><td>有效表达库</td><td>投放素材、达人内容、直播话术</td><td>下一轮 brief 和 AI 生成的输入</td></tr><tr><td>承接断点表</td><td>商品页、客服、售后、成交漏斗</td><td>优先修改销售承接</td></tr><tr><td>失败样本库</td><td>高点击低转化、热闹不成交、成交不留存</td><td>避免下一轮重复犯错</td></tr></tbody></table></div></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b236" data-block-id="b236" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B236</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h022">4. 常见失败清单</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block list " id="b237" data-block-id="b237" data-kind="list">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B237</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><ol><li>把六维理解成六个渠道，最后变成多做动作。</li><li>每个部门只证明自己做得对，不追踪用户有没有走完。</li><li>只看单点指标，不看维度之间的断点。</li><li>只复盘结果，不沉淀下一轮能调用的资产。</li><li>把 AI 当成内容生成器，而不是诊断、校准、复盘的辅助系统。</li><li>搜索、客服、评论、直播弹幕各自散落，没有回到品牌表达和商品承接。</li><li>直播只追成交，不把购买顾虑和有效话术带回前端。</li></ol></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h3 " id="b238" data-block-id="b238" data-kind="heading h3">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B238</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h3 id="h023">5. 证据边界</h3></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block table-block " id="b239" data-block-id="b239" data-kind="table-block">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B239</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><div class="table-wrap"><table><thead><tr><th>类型</th><th>本章使用方式</th><th>说明</th></tr></thead><tbody><tr><td>公开事实</td><td>McKinsey、Bain、IAB、Google/Kantar/Marketing Week 等公开材料<sup><a href="#fn-1">[1]</a></sup><sup><a href="#fn-2">[2]</a></sup><sup><a href="#fn-3">[3]</a></sup><sup><a href="#fn-4">[4]</a></sup></td><td>仅用于支撑 AI 搜索、零点击、增量测量、AI 创意测量等趋势背景</td></tr><tr><td>作者经验</td><td>新品复盘会、达人 brief、商品页承接、直播问答等经营场景</td><td>作为中国品牌常见工作现场，不指向单一真实公司</td></tr><tr><td>合理推断</td><td>六维之间的断点关系、目标层与手段层的回路</td><td>基于营销流程和用户旅程推导</td></tr><tr><td>待查证</td><td>具体品牌案例、具体销售结果、平台效果归因</td><td>出版前如加入中国公开案例，需要单独核验证据</td></tr></tbody></table></div></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block heading h2 " id="b240" data-block-id="b240" data-kind="heading h2">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B240</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2 id="h024">本章脚注</h2></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section><section class="review-block footnotes " id="b241" data-block-id="b241" data-kind="footnotes">
+  <div class="block-tools" aria-label="段落批注工具">
+    <span class="block-id">B241</span>
+    <button type="button" class="tool-btn flag-btn" data-flag="important" title="标记为重点">重点</button>
+    <button type="button" class="tool-btn flag-btn" data-flag="revise" title="标记为待改">待改</button>
+    <button type="button" class="tool-btn note-toggle" title="展开或收起批注">批注</button>
+  </div>
+  <div class="block-body"><h2>脚注来源</h2><ol class="footnotes"><li id="fn-1"><span class="fn-label">[1]</span> McKinsey &amp; Company, “New front door to the internet: Winning in the age of AI search,” 2025-10-16. https://www.mckinsey.com/capabilities/growth-marketing-and-sales/our-insights/new-front-door-to-the-internet-winning-in-the-age-of-ai-search</li><li id="fn-2"><span class="fn-label">[2]</span> Bain &amp; Company, “Goodbye Clicks, Hello AI: Zero-Click Search Redefines Marketing,” 2025-02-19. https://www.bain.com/insights/goodbye-clicks-hello-ai-zero-click-search-redefines-marketing/</li><li id="fn-3"><span class="fn-label">[3]</span> IAB, “Guidelines for Incremental Measurement in Commerce Media,” 2025-11-03. https://www.iab.com/guidelines/guidelines-for-incremental-measurement-in-commerce-media/</li><li id="fn-4"><span class="fn-label">[4]</span> Google Business, “New research shows how AI can close the creative measurement gap,” 2025-11. https://business.google.com/uk/think/measurement/creative-measurement-gap-ai-google-kantar/</li></ol></div>
+  <div class="note-drawer" hidden>
+    <textarea class="note-input" rows="4" placeholder="写下对这一段的批注、改法或疑问。内容会自动保存在本机浏览器。"></textarea>
+  </div>
+</section>
+  </main>
+  <aside class="inspector panel">
+    <h2>批注状态</h2>
+    <div class="stats">
+      <div class="stat"><strong id="stat-notes">0</strong><span>有批注</span></div>
+      <div class="stat"><strong id="stat-important">0</strong><span>重点</span></div>
+      <div class="stat"><strong id="stat-revise">0</strong><span>待改</span></div>
+      <div class="stat"><strong id="stat-total">241</strong><span>段落</span></div>
+    </div>
+    <p class="help">用法：每段左侧可标记重点、待改，点击“批注”填写意见。导出的 Markdown 会包含段落编号、原文摘要和你的批注。</p>
+    <p class="help">提示：如果你要批注标题结构，也可以直接给标题段落写批注。</p>
+  </aside>
+</div>
+<script>
+(() => {
+  const STORAGE_KEY = 'liuwei-ch03-v211-review-notes';
+  const blocks = [...document.querySelectorAll('.review-block')];
+  const load = () => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+    catch { return {}; }
+  };
+  const save = (data) => localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  let notes = load();
+
+  function blockText(block) {
+    return (block.querySelector('.block-body')?.innerText || '').replace(/\s+/g, ' ').trim();
+  }
+  function setDrawer(block, open) {
+    const drawer = block.querySelector('.note-drawer');
+    const btn = block.querySelector('.note-toggle');
+    drawer.hidden = !open;
+    btn.classList.toggle('active', open);
+  }
+  function applyState(block) {
+    const id = block.dataset.blockId;
+    const data = notes[id] || {};
+    const textarea = block.querySelector('.note-input');
+    textarea.value = data.note || '';
+    block.classList.toggle('has-note', !!(data.note && data.note.trim()));
+    block.classList.toggle('important', !!data.important);
+    block.classList.toggle('revise', !!data.revise);
+    block.querySelector('[data-flag="important"]').classList.toggle('active', !!data.important);
+    block.querySelector('[data-flag="revise"]').classList.toggle('active', !!data.revise);
+    if (data.note && data.note.trim()) setDrawer(block, true);
+  }
+  function updateStats() {
+    let noteCount = 0, importantCount = 0, reviseCount = 0;
+    blocks.forEach(block => {
+      const data = notes[block.dataset.blockId] || {};
+      if (data.note && data.note.trim()) noteCount++;
+      if (data.important) importantCount++;
+      if (data.revise) reviseCount++;
+    });
+    document.getElementById('stat-notes').textContent = noteCount;
+    document.getElementById('stat-important').textContent = importantCount;
+    document.getElementById('stat-revise').textContent = reviseCount;
+    document.getElementById('stat-total').textContent = blocks.length;
+  }
+  blocks.forEach(block => {
+    const id = block.dataset.blockId;
+    applyState(block);
+    block.querySelector('.note-toggle').addEventListener('click', () => {
+      setDrawer(block, block.querySelector('.note-drawer').hidden);
+      block.querySelector('.note-input').focus();
+    });
+    block.querySelectorAll('.flag-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        notes[id] = notes[id] || {};
+        const flag = btn.dataset.flag;
+        notes[id][flag] = !notes[id][flag];
+        save(notes);
+        applyState(block);
+        updateStats();
+      });
+    });
+    block.querySelector('.note-input').addEventListener('input', (event) => {
+      notes[id] = notes[id] || {};
+      notes[id].note = event.target.value;
+      save(notes);
+      applyState(block);
+      updateStats();
+    });
+  });
+  updateStats();
+
+  document.getElementById('toggle-filter').addEventListener('click', () => document.body.classList.toggle('filter-on'));
+  document.getElementById('expand-notes').addEventListener('click', () => blocks.forEach(block => setDrawer(block, true)));
+  document.getElementById('collapse-notes').addEventListener('click', () => blocks.forEach(block => {
+    if (!((notes[block.dataset.blockId] || {}).note || '').trim()) setDrawer(block, false);
+  }));
+  document.getElementById('print-page').addEventListener('click', () => window.print());
+  document.getElementById('export-notes').addEventListener('click', () => {
+    const rows = [];
+    blocks.forEach(block => {
+      const id = block.dataset.blockId;
+      const data = notes[id] || {};
+      if (!data.note?.trim() && !data.important && !data.revise) return;
+      const flags = [data.important ? '重点' : '', data.revise ? '待改' : ''].filter(Boolean).join('、') || '普通批注';
+      const fullText = blockText(block);
+      const excerpt = fullText.slice(0, 260);
+      rows.push(`## ${id.toUpperCase()} · ${flags}\n\n> 原文：${excerpt}${fullText.length > 260 ? '...' : ''}\n\n${data.note?.trim() ? data.note.trim() : '_未填写具体批注_'}\n`);
+    });
+    const content = `# 第三章校对批注导出\n\n导出时间：${new Date().toLocaleString()}\n\n${rows.length ? rows.join('\n') : '暂无批注或标记。\n'}`;
+    const blob = new Blob([content], {type: 'text/markdown;charset=utf-8'});
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(blob);
+    anchor.download = '第三章校对批注导出.md';
+    anchor.click();
+    URL.revokeObjectURL(anchor.href);
+  });
+})();
+</script>
+</body>
+</html>
