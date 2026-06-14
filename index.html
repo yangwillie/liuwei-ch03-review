@@ -47,6 +47,23 @@ a:hover { text-decoration: underline; }
 .brand strong { font-size: 16px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand span { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid #c9d8b6;
+  border-radius: 8px;
+  background: #f4faed;
+  color: #3f6b22;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.save-status.error {
+  border-color: #efb4ad;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
 .btn {
   border: 1px solid var(--line);
   background: #fff;
@@ -198,7 +215,9 @@ code { background: #f0eee8; border-radius: 4px; padding: 1px 4px; font-family: u
     <button class="btn" id="toggle-filter">只看有批注/标记</button>
     <button class="btn" id="expand-notes">展开批注</button>
     <button class="btn" id="collapse-notes">收起批注</button>
-    <button class="btn primary" id="export-notes">导出批注 MD</button>
+    <span class="save-status" id="save-status">自动保存已开启</span>
+    <button class="btn" id="manual-save">保存到本机</button>
+    <button class="btn primary" id="export-notes">导出备份 MD</button>
     <button class="btn" id="print-page">打印/PDF</button>
   </div>
 </header>
@@ -2869,7 +2888,8 @@ code { background: #f0eee8; border-radius: 4px; padding: 1px 4px; font-family: u
       <div class="stat"><strong id="stat-revise">0</strong><span>待改</span></div>
       <div class="stat"><strong id="stat-total">241</strong><span>段落</span></div>
     </div>
-    <p class="help">用法：每段左侧可标记重点、待改，点击“批注”填写意见。导出的 Markdown 会包含段落编号、原文摘要和你的批注。</p>
+    <p class="help">用法：每段左侧可标记重点、待改，点击“批注”填写意见。输入时会自动保存到当前浏览器，也可以点“保存到本机”手动确认。</p>
+    <p class="help">重要：本机保存不跨设备、不跨域名。换电脑、换浏览器或清缓存前，请点“导出备份 MD”。</p>
     <p class="help">提示：如果你要批注标题结构，也可以直接给标题段落写批注。</p>
   </aside>
 </div>
@@ -2877,12 +2897,31 @@ code { background: #f0eee8; border-radius: 4px; padding: 1px 4px; font-family: u
 (() => {
   const STORAGE_KEY = 'liuwei-ch03-v211-review-notes';
   const blocks = [...document.querySelectorAll('.review-block')];
+  const saveStatus = document.getElementById('save-status');
   const load = () => {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
     catch { return {}; }
   };
-  const save = (data) => localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   let notes = load();
+
+  function nowText() {
+    return new Date().toLocaleTimeString('zh-CN', { hour12: false });
+  }
+  function setSaveStatus(text, isError = false) {
+    if (!saveStatus) return;
+    saveStatus.textContent = text;
+    saveStatus.classList.toggle('error', isError);
+  }
+  const save = (data, mode = 'auto') => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      setSaveStatus(`${mode === 'manual' ? '已手动保存' : '已自动保存'} ${nowText()}`);
+      return true;
+    } catch (error) {
+      setSaveStatus('保存失败，请导出备份', true);
+      return false;
+    }
+  };
 
   function blockText(block) {
     return (block.querySelector('.block-body')?.innerText || '').replace(/\s+/g, ' ').trim();
@@ -2944,12 +2983,14 @@ code { background: #f0eee8; border-radius: 4px; padding: 1px 4px; font-family: u
     });
   });
   updateStats();
+  setSaveStatus(Object.keys(notes).length ? `已加载本机批注 ${nowText()}` : '自动保存已开启');
 
   document.getElementById('toggle-filter').addEventListener('click', () => document.body.classList.toggle('filter-on'));
   document.getElementById('expand-notes').addEventListener('click', () => blocks.forEach(block => setDrawer(block, true)));
   document.getElementById('collapse-notes').addEventListener('click', () => blocks.forEach(block => {
     if (!((notes[block.dataset.blockId] || {}).note || '').trim()) setDrawer(block, false);
   }));
+  document.getElementById('manual-save').addEventListener('click', () => save(notes, 'manual'));
   document.getElementById('print-page').addEventListener('click', () => window.print());
   document.getElementById('export-notes').addEventListener('click', () => {
     const rows = [];
